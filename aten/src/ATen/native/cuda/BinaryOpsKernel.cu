@@ -13,18 +13,12 @@
 namespace at { namespace native {
 
 void add_kernel_cuda(TensorIterator& iter, Scalar alpha_scalar) {
-  if (iter.dtype() == ScalarType::Bool) {
-    gpu_kernel_with_scalars(iter, []GPU_LAMBDA(bool a, bool b) -> bool {
-      return a + b;
+  AT_DISPATCH_ALL_TYPES_AND2(kHalf, kBool, iter.dtype(), "add_cuda", [&]() {
+    auto alpha = alpha_scalar.to<scalar_t>();
+    gpu_kernel_with_scalars(iter, [alpha]GPU_LAMBDA(scalar_t a, scalar_t b) -> scalar_t {
+      return a + alpha * b;
     });
-  } else {
-    AT_DISPATCH_ALL_TYPES_AND(kHalf, iter.dtype(), "add_cuda", [&]() {
-      auto alpha = alpha_scalar.to<scalar_t>();
-      gpu_kernel_with_scalars(iter, [alpha]GPU_LAMBDA(scalar_t a, scalar_t b) -> scalar_t {
-        return a + alpha * b;
-      });
-    });
-  }
+  });
 }
 
 static void sub_kernel_cuda(TensorIterator& iter, Scalar alpha_scalar) {
